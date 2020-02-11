@@ -22,16 +22,15 @@ def crypto_event():
 
     auth_client = coin_utils.cbpro_auth()
 
-    if auth_client.get_accounts()[2].get("available")>100:
-        buy_history = load_blob(project_id=project,
-                                bucket_name=bucket,
-                                destination_path=ticker,
-                                filename="buy_history.pkl")
+    buy_history = load_blob(project_id=project,
+                            bucket_name=bucket,
+                            destination_path=ticker,
+                            filename="buy_history.pkl")
 
-        df = coin_utils.get_coin_data(ticker)
+    df = coin_utils.get_coin_data(ticker)
+    buy = coin_utils.buy_event(df, buy_history)
 
-        coin_utils.buy_event(df, buy_history)
-
+    if buy[0] and auth_client.get_accounts()[2].get("available")>=100:
         auth_client.place_market_order(product_id='BTC-USD',
                                side='buy',
                                funds='100.00')
