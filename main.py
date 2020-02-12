@@ -61,14 +61,14 @@ def crypto_event(request):
         # auth first
         auth_client = coin_utils.cbpro_auth(key,secret,passphrase)
         # get the sell amount as oldest buy amount
-        btc_amount = buy_history.pop(0)
+        amount = buy_history.pop(0)
         # calculate sell the dollar value
-        sell = btc_amount*df.iloc[latest_record,:]["close"]
+        sell = amount*df.iloc[latest_record,:]["close"]
         # only sell if the amount is greater than your buy increments
         if sell > increment_int:
-            auth_client.place_market_order(product_id='BTC-USD',
+            auth_client.place_market_order(product_id='{}-USD'.format(ticker.upper()),
                                side='sell',
                                size=sell)
         else:
-            buy_history.insert(0,btc_amount)
+            buy_history.insert(0,amount)
     return True
