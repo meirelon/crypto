@@ -50,7 +50,7 @@ def crypto_event(request):
         account_info = [x for x in auth_client.get_accounts()
                                 if x.get("currency").lower() == ticker.lower()][0]
 
-        if auth_client.get_accounts()[2].get("available")>=increment_int:
+        if account_info.get("available")>=increment_int:
             # place order
             auth_client.place_market_order(product_id='{}-USD'.format(ticker.upper()),
                                    side='buy',
