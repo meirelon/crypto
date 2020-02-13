@@ -10,25 +10,35 @@ from tempfile import NamedTemporaryFile
 
 from deps.utils import upload_blob, load_blob
 import deps.coin_utils as coin_utils
+
 def crypto_event(request):
-    project = os.environ["PROJECT_ID"]
-    bucket = os.environ["GCS_BUCKET"]
+    if request.method == "POST":
+        r = request.get_json()
+        project = r.get("project_id")
+        bucket = r.get("bucket")
+        key = r.get("key")
+        secret = r.get("cbpro_secret")
+        passphrase = r.get("cbpro_passphrase")
+        ticker = r.get("ticker")
+        rolling_period = r.get("rolling_period")
+        increment = r.get("increment")
+        increment_int = int(increment)
+    else:
+        return False
 
-    key = os.environ["CBPRO_KEY"]
-    secret = os.environ["CBPRO_SECRET"]
-    passphrase = os.environ["CBPRO_PASSPHRASE"]
-
-    ticker = os.environ["TICKER"]
-
-    rolling_period = os.environ["ROLLING_PERIOD"]
-    increment = os.environ["INCREMENT"]
-    increment_int = int(increment)
-
-    # Read in buy history from storage
-    buy_history = load_blob(project_id=project,
-                            bucket_name=bucket,
-                            destination_path=ticker,
-                            filename="buy_history.pkl")
+    try:
+        # Read in buy history from storage
+        buy_history = load_blob(project_id=project,
+                                bucket_name=bucket,
+                                destination_path=ticker,
+                                filename="{}_buy_history.pkl".format(passphrase))
+    except:
+        buy_history = []
+        pickle.dump(buy_history, open("tmp/buy_history.pkl", "wb"))
+        upload_blob(project_id=project,
+                        bucket_name=bucket,
+                        source_file_name="buy_history.pkl",
+                        destination_blob_name="{t}/{p}_buy_history.pkl".format(t=ticker, p=passphrase))
 
     df = coin_utils.get_coin_data(ticker, int(rolling_period))
     latest_record = len(df)-1
@@ -37,6 +47,9 @@ def crypto_event(request):
     if df.iloc[latest_record,:]["close"] <= df.iloc[latest_record,:]["rolling_min"]:
         # auth first
         auth_client = coin_utils.cbpro_auth(key,secret,passphrase)
+        account_info = [x for x in auth_client.get_accounts()
+                                if x.get("currency").lower() == ticker.lower()][0]
+
         if auth_client.get_accounts()[2].get("available")>=increment_int:
             # place order
             auth_client.place_market_order(product_id='{}-USD'.format(ticker.upper()),
@@ -54,7 +67,7 @@ def crypto_event(request):
             upload_blob(project_id=project,
                             bucket_name=bucket,
                             source_file_name="buy_history.pkl",
-                            destination_blob_name="{}/buy_history.pkl".format(ticker))
+                            destination_blob_name="{t}/{p}_buy_history.pkl".format(t=ticker, p=passphrase))
 
     # sell event
     if df.iloc[latest_record,:]["close"] >= df.iloc[latest_record,:]["rolling_max"] and len(buy_history)>0:

@@ -1,0 +1,10 @@
+{"project_id": "your-gcp-project-str",
+"bucket": "your-gcs-bucket-str",
+
+"cbpro_key":" your-cbpro-key-str",
+"cbpro_secret": "your-cbpro-secret-str",
+"cbpro_passphrase": "your-cbpro-passphrase-str",
+
+"ticker": "btc",
+"rolling_period": 180,
+"increment": 100}
