@@ -34,7 +34,7 @@ def crypto(request):
                                 filename="{}_buy_history.pkl".format(passphrase))
     except:
         buy_history = []
-        pickle.dump(buy_history, open("tmp/buy_history.pkl", "wb"))
+        pickle.dump(buy_history, open("/tmp/buy_history.pkl", "wb"))
         upload_blob(project_id=project,
                         bucket_name=bucket,
                         source_file_name="buy_history.pkl",
@@ -61,7 +61,7 @@ def crypto(request):
             buy_history.append(buy)
 
             # temp storage for lambda
-            pickle.dump(buy_history, open("tmp/buy_history.pkl", "wb"))
+            pickle.dump(buy_history, open("/tmp/buy_history.pkl", "wb"))
 
             # util function to upload buy history to storage
             upload_blob(project_id=project,
