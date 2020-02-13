@@ -11,7 +11,7 @@ from tempfile import NamedTemporaryFile
 from deps.utils import upload_blob, load_blob
 import deps.coin_utils as coin_utils
 
-def crypto_event(request):
+def crypto(request):
     if request.method == "POST":
         r = request.get_json()
         project = r.get("project_id")
