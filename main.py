@@ -22,7 +22,7 @@ def crypto(request):
         ticker = r["ticker"]
         rolling_period = r["rolling_period"]
         increment = r["increment"]
-        increment_int = int(increment)
+        increment_float = float(increment)
     else:
         return "still testing... first"
 
@@ -50,14 +50,14 @@ def crypto(request):
         account_info = [x for x in auth_client.get_accounts()
                                 if x.get("currency").lower() == ticker.lower()][0]
 
-        if account_info.get("available")>=increment_int:
+        if float(account_info.get("available"))>=increment_float:
             # place order
             auth_client.place_market_order(product_id='{}-USD'.format(ticker.upper()),
                                    side='buy',
                                    funds='{}.00'.format(increment))
 
             # record buy and upload blob to storage
-            buy = int(increment)/df.iloc[latest_record,:]["close"]
+            buy = increment_float/df.iloc[latest_record,:]["close"]
             buy_history.append(buy)
 
             # temp storage for lambda
@@ -78,7 +78,7 @@ def crypto(request):
         # calculate sell the dollar value
         sell = amount*df.iloc[latest_record,:]["close"]
         # only sell if the amount is greater than your buy increments
-        if sell > increment_int:
+        if sell > increment_float:
             auth_client.place_market_order(product_id='{}-USD'.format(ticker.upper()),
                                side='sell',
                                size=sell)
