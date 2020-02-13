@@ -9,22 +9,22 @@ from tempfile import NamedTemporaryFile
 
 
 from deps.utils import upload_blob, load_blob
-import deps.coin_utils as coin_utils
+from deps.coin_utils import get_coin_data, cbpro_auth
 
 def crypto(request):
     if request.method == "POST":
         r = request.get_json()
-        project = r.get("project_id")
-        bucket = r.get("bucket")
-        key = r.get("key")
-        secret = r.get("cbpro_secret")
-        passphrase = r.get("cbpro_passphrase")
-        ticker = r.get("ticker")
-        rolling_period = r.get("rolling_period")
-        increment = r.get("increment")
+        project = r["project_id"]
+        bucket = r["bucket"]
+        key = r["cbpro_key"]
+        secret = r["cbpro_secret"]
+        passphrase = r["cbpro_passphrase"]
+        ticker = r["ticker"]
+        rolling_period = r["rolling_period"]
+        increment = r["increment"]
         increment_int = int(increment)
     else:
-        return False
+        return "still testing... first"
 
     try:
         # Read in buy history from storage
@@ -40,13 +40,13 @@ def crypto(request):
                         source_file_name="/tmp/buy_history.pkl",
                         destination_blob_name="{t}/{p}_buy_history.pkl".format(t=ticker, p=passphrase))
 
-    df = coin_utils.get_coin_data(ticker, int(rolling_period))
+    df = get_coin_data(ticker, int(rolling_period))
     latest_record = len(df)-1
 
     # buy event
     if df.iloc[latest_record,:]["close"] <= df.iloc[latest_record,:]["rolling_min"]:
         # auth first
-        auth_client = coin_utils.cbpro_auth(key,secret,passphrase)
+        auth_client = cbpro_auth(key,secret,passphrase)
         account_info = [x for x in auth_client.get_accounts()
                                 if x.get("currency").lower() == ticker.lower()][0]
 
@@ -72,7 +72,7 @@ def crypto(request):
     # sell event
     if df.iloc[latest_record,:]["close"] >= df.iloc[latest_record,:]["rolling_max"] and len(buy_history)>0:
         # auth first
-        auth_client = coin_utils.cbpro_auth(key,secret,passphrase)
+        auth_client = cbpro_auth(key,secret,passphrase)
         # get the sell amount as oldest buy amount
         amount = buy_history.pop(0)
         # calculate sell the dollar value
@@ -84,4 +84,4 @@ def crypto(request):
                                size=sell)
         else:
             buy_history.insert(0,amount)
-    return True
+    return "still testing... second"
