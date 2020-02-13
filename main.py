@@ -42,22 +42,25 @@ def crypto(request):
 
     df = get_coin_data(ticker, int(rolling_period))
     latest_record = len(df)-1
+    close = df.iloc[latest_record,:]["close"]
+    rolling_min = df.iloc[latest_record,:]["rolling_min"]
+    rolling_max = df.iloc[latest_record,:]["rolling_max"]
 
     # buy event
-    if df.iloc[latest_record,:]["close"] <= df.iloc[latest_record,:]["rolling_min"]:
+    if close <= rolling_min:
         # auth first
         auth_client = cbpro_auth(key,secret,passphrase)
         account_info = [x for x in auth_client.get_accounts()
                                 if x.get("currency").lower() == ticker.lower()][0]
 
-        if float(account_info.get("available"))>=increment_float:
+        if (float(account_info.get("available"))*close)>=increment_float:
             # place order
             auth_client.place_market_order(product_id='{}-USD'.format(ticker.upper()),
                                    side='buy',
                                    funds='{}.00'.format(increment))
 
             # record buy and upload blob to storage
-            buy = increment_float/df.iloc[latest_record,:]["close"]
+            buy = increment_float/close
             buy_history.append(buy)
 
             # temp storage for lambda
@@ -68,9 +71,10 @@ def crypto(request):
                             bucket_name=bucket,
                             source_file_name="/tmp/buy_history.pkl",
                             destination_blob_name="{t}/{p}_buy_history.pkl".format(t=ticker, p=passphrase))
+            return "Buy"
 
     # sell event
-    if df.iloc[latest_record,:]["close"] >= df.iloc[latest_record,:]["rolling_max"] and len(buy_history)>0:
+    if close >= rolling_max and len(buy_history)>0:
         # auth first
         auth_client = cbpro_auth(key,secret,passphrase)
         # get the sell amount as oldest buy amount
@@ -84,4 +88,5 @@ def crypto(request):
                                size=sell)
         else:
             buy_history.insert(0,amount)
-    return "still testing... second"
+        return "Sell"
+    return "No Buy Or Sell"
