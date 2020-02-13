@@ -37,7 +37,7 @@ def crypto(request):
         pickle.dump(buy_history, open("/tmp/buy_history.pkl", "wb"))
         upload_blob(project_id=project,
                         bucket_name=bucket,
-                        source_file_name="buy_history.pkl",
+                        source_file_name="/tmp/buy_history.pkl",
                         destination_blob_name="{t}/{p}_buy_history.pkl".format(t=ticker, p=passphrase))
 
     df = coin_utils.get_coin_data(ticker, int(rolling_period))
@@ -66,7 +66,7 @@ def crypto(request):
             # util function to upload buy history to storage
             upload_blob(project_id=project,
                             bucket_name=bucket,
-                            source_file_name="buy_history.pkl",
+                            source_file_name="/tmp/buy_history.pkl",
                             destination_blob_name="{t}/{p}_buy_history.pkl".format(t=ticker, p=passphrase))
 
     # sell event
