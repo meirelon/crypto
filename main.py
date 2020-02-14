@@ -58,10 +58,10 @@ def crypto(request):
 
     # buy event
     if close <= rolling_min:
-        buy_event = crypto_event.buy(close=close)
+        buy_event = crypto_event.buy(close=close, buy_history=buy_history)
         return buy_event
 
     # sell event
-    if close >= rolling_max and len(buy_history)>0:
+    if close >= rolling_max and len(buy_history) > 0:
         sell_event = crypto_event.sell(close=close, buy_history=buy_history)
         return sell_event

@@ -43,7 +43,7 @@ class CryptoEventTrigger:
         self.increment=increment
 
 
-    def buy(self, close):
+    def buy(self, buy_history, close):
         # auth first
         auth_client = cbpro_auth(self.key,self.secret,self.passphrase)
         account_info = [x for x in auth_client.get_accounts()
