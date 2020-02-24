@@ -1,16 +1,16 @@
+import time
+
 import pandas as pd
-import cbpro
 
 def get_coin_data(ticker="btc", rolling_period=175):
     if not (isinstance(ticker, str)):
         raise TypeError('Input must be a string')
 
-    s = 'https://poloniex.com/public?command=returnChartData&currencyPair=USDT_' + ticker.upper() + '&start=1439020800&end=9999999999&period=14400'
+    time_end = time.time()
+    time_start = time_end - 31556952
+
+    s = f'https://poloniex.com/public?command=returnChartData&currencyPair=USDT_{ticker.upper()}&start={time_start}&end={time_end}&period=14400'
     df = pd.read_json(s)
     df["rolling_min"] = df["close"].rolling(rolling_period).min()
     df["rolling_max"] = df["close"].rolling(rolling_period).max()
     return(df)
-
-
-def cbpro_auth(k,s,p):
-    return cbpro.AuthenticatedClient(k, s, p)
