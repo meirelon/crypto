@@ -5,7 +5,7 @@ import pandas as pd
 
 from deps.coin_utils import get_coin_data
 from deps.storage import load_blob, upload_blob, get_buy_history
-from deps.crypto import CryptoEventTrigger
+from deps.crypto import CryptoEventTrigger, EventOutcome
 
 def crypto(request):
     if request.method == "POST":
@@ -20,7 +20,6 @@ def crypto(request):
         increment = r["increment"]
         increment_float = float(increment)
     else:
-        return abort(405)
         return "missing parameters"
 
 

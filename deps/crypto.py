@@ -1,8 +1,13 @@
 import pickle
 import time
+from enum import Enum
 
 import pandas as pd
 import cbpro
+
+class EventOutcome(Enum):
+    BUY = "buy"
+    SELL = "sell"
 
 class CryptoEventTrigger:
     def __init__(self,
@@ -53,7 +58,7 @@ class CryptoEventTrigger:
                             bucket_name=self.bucket,
                             source_file_name="/tmp/buy_history.pkl",
                             destination_blob_name=f"{self.ticker.lower()}/{self.passphrase}_buy_history.pkl")
-            return "Buy"
+            return EventOutcome.BUY
         else:
             return "Insufficient Funds"
 
@@ -76,7 +81,7 @@ class CryptoEventTrigger:
                                 bucket_name=self.bucket,
                                 source_file_name="/tmp/buy_history.pkl",
                                 destination_blob_name=f"{self.ticker.lower()}/{self.passphrase}_buy_history.pkl")
-                return "Sell"
+                return EventOutcome.SELL
             else:
                 buy_history.insert(0,amount)
                 # util function to upload buy history to storage
