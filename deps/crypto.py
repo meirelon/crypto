@@ -5,7 +5,7 @@ from enum import Enum
 import pandas as pd
 import cbpro
 
-from deps.storage import load_blob, upload_blob, get_buy_history, dump_and_upload
+from deps.storage import get_buy_history, dump_and_upload
 
 class EventOutcome(Enum):
     BUY = "buy"
@@ -99,7 +99,6 @@ class CryptoEventTrigger:
 
     def run(self, transaction_type, close):
         if transaction_type.lower() == "buy":
-            self.buy(close=close)
+            return self.buy(close=close)
         if transaction_type.lower() == "sell":
-            self.sell(close=close)
-            return "something"
+            return self.sell(close=close)
