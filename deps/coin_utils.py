@@ -13,4 +13,4 @@ def get_coin_data(ticker="btc", rolling_period=175):
     df = pd.read_json(s)
     df["rolling_min"] = df["close"].rolling(rolling_period).min()
     df["rolling_max"] = df["close"].rolling(rolling_period).max()
-    return(df)
+    return [df, df.iloc[-1,:]["close"], df.iloc[-1,:]["rolling_min"], df.iloc[-1,:]["rolling_max"]]

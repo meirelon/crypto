@@ -5,6 +5,8 @@ from enum import Enum
 import pandas as pd
 import cbpro
 
+from deps.storage import load_blob, upload_blob, get_buy_history, dump_and_upload
+
 class EventOutcome(Enum):
     BUY = "buy"
     SELL = "sell"
@@ -32,7 +34,7 @@ class CryptoEventTrigger:
     def cbpro_auth(k,s,p):
         return cbpro.AuthenticatedClient(k, s, p)
 
-    def buy(self, close, buy_history):
+    def buy(self, close):
         # auth first
         auth_client = self.cbpro_auth(self.key,self.secret,self.passphrase)
         account_info = [x for x in auth_client.get_accounts()
@@ -48,49 +50,56 @@ class CryptoEventTrigger:
 
             # record buy and upload blob to storage
             buy_amount = (self.increment)/close
+            buy_history = get_buy_history(self.project, self.bucket, self.ticker, self.passphrase)
             buy_history.append(buy_amount)
 
-            # temp storage for lambda
-            pickle.dump(buy_history, open("/tmp/buy_history.pkl", "wb"))
-
-            # util function to upload buy history to storage
-            upload_blob(project_id=self.project,
-                            bucket_name=self.bucket,
-                            source_file_name="/tmp/buy_history.pkl",
-                            destination_blob_name=f"{self.ticker.lower()}/{self.passphrase}_buy_history.pkl")
+            dump_and_upload(obj=buy_history,
+                            project=self.project,
+                            bucket=self.bucket,
+                            ticker=self.ticker,
+                            passphrase=self.passphrase)
             return EventOutcome.BUY
         else:
             return "Insufficient Funds"
 
-    def sell(self, close, buy_history):
-            # auth first
-            auth_client = self.cbpro_auth(self.key,self.secret,self.passphrase)
-            # get the sell amount as oldest buy amount
-            amount = buy_history.pop(0)
-            # calculate sell the dollar value
-            sell_amount = amount*close
+    def sell(self, close):
             # only sell if the amount is greater than your buy increments
-            if sell_amount > self.increment:
-                auth_client.place_market_order(product_id=f'{self.ticker.upper()}-USD',
-                                   side='sell',
-                                   size=sell_amount)
+            buy_history = get_buy_history(self.project, self.bucket, self.ticker, self.passphrase)
+            if len(buy_history) > 0:
+                # get the sell amount as oldest buy amount
+                amount = buy_history.pop(0)
+                # calculate sell the dollar value
+                sell_amount = amount*close
+                if sell_amount > self.increment:
+                    # auth first
+                    auth_client = self.cbpro_auth(self.key,self.secret,self.passphrase)
+                    # then make the sell
+                    auth_client.place_market_order(product_id=f'{self.ticker.upper()}-USD',
+                                       side='sell',
+                                       size=sell_amount)
 
-                # util function to upload buy history to storage
-                pickle.dump(buy_history, open("/tmp/buy_history.pkl", "wb"))
-                upload_blob(project_id=self.project,
-                                bucket_name=self.bucket,
-                                source_file_name="/tmp/buy_history.pkl",
-                                destination_blob_name=f"{self.ticker.lower()}/{self.passphrase}_buy_history.pkl")
-                return EventOutcome.SELL
+                    # util function to upload buy history to storage
+                    dump_and_upload(obj=buy_history,
+                                    project=self.project,
+                                    bucket=self.bucket,
+                                    ticker=self.ticker,
+                                    passphrase=self.passphrase)
+                    return EventOutcome.SELL
+                else:
+                    buy_history.insert(0,amount)
+                    # util function to upload buy history to storage
+                    dump_and_upload(obj=buy_history,
+                                    project=self.project,
+                                    bucket=self.bucket,
+                                    ticker=self.ticker,
+                                    passphrase=self.passphrase)
+                    return "Sell not bigger then increment"
             else:
-                buy_history.insert(0,amount)
-                # util function to upload buy history to storage
-                pickle.dump(buy_history, open("/tmp/buy_history.pkl", "wb"))
-                upload_blob(project_id=self.project,
-                                bucket_name=self.bucket,
-                                source_file_name="/tmp/buy_history.pkl",
-                                destination_blob_name=f"{self.ticker.lower()}/{self.passphrase}_buy_history.pkl")
-                return "Sell not bigger then increment"
+                return "No buy history"
 
-    def run(self):
+    def run(self, transaction_type, close):
+        if transaction_type.lower() == "buy":
+            self.buy(close=close)
+        if transaction_type.lower() == "sell":
+            self.sell(close=close)
             return "something"

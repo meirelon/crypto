@@ -39,3 +39,14 @@ def get_buy_history(project, bucket, ticker, passphrase):
                         source_file_name="/tmp/buy_history.pkl",
                         destination_blob_name=f"{ticker.lower()}/{passphrase}_buy_history.pkl")
     return buy_history
+
+
+def dump_and_upload(obj, project_id, bucket_name, ticker, passphrase):
+    # temp storage for lambda
+    pickle.dump(obj, open(f"/tmp/{obj.lower()}.pkl", "wb"))
+
+    # util function to upload buy history to storage
+    upload_blob(project_id=project,
+                    bucket_name=bucket,
+                    source_file_name=f"/tmp/{obj.lower()}.pkl",
+                    destination_blob_name=f"{ticker.lower()}/{passphrase}_buy_history.pkl")
