@@ -33,11 +33,11 @@ def get_buy_history(project, bucket, ticker, passphrase):
         # if the buy history for this account does not exist
         # create a new list and upload to storage
         buy_history = []
-        pickle.dump(buy_history, open("/tmp/buy_history.pkl", "wb"))
-        upload_blob(project_id=project,
-                        bucket_name=bucket,
-                        source_file_name="/tmp/buy_history.pkl",
-                        destination_blob_name=f"{ticker.lower()}/{passphrase}_buy_history.pkl")
+        dump_and_upload(buy_history,
+                        project,
+                        bucket,
+                        ticker,
+                        passphrase)
     return buy_history
 
 
